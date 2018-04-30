@@ -17,11 +17,24 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "version.h"
-using namespace std;
+#ifndef _SOCKS5ADDRESS_H_
+#define _SOCKS5ADDRESS_H_
 
-const string Version::version("1.1.0");
+#include <cstdint>
+#include <string>
+#include <boost/asio.hpp>
 
-string Version::get_version() {
-    return version;
-}
+class SOCKS5Address {
+public:
+    enum AddressType {
+        IPv4 = 1,
+        DOMAINNAME = 3,
+        IPv6 = 4
+    } address_type;
+    std::string address;
+    uint16_t port;
+    int parse(const std::string &data);
+    static std::string generate(const boost::asio::ip::udp::endpoint &endpoint);
+};
+
+#endif // _SOCKS5ADDRESS_H_

@@ -18,12 +18,22 @@
  */
 
 #include <cstdlib>
-#include <string>
-#include "log.h"
-#include "config.h"
+#include <csignal>
 #include "service.h"
 #include "version.h"
 using namespace std;
+
+Service *service;
+bool restart;
+
+void handleTermination(int) {
+    service->stop();
+}
+
+void restartService(int) {
+    restart = true;
+    service->stop();
+}
 
 int main(int argc, const char *argv[]) {
     Log::log("Welcome to trojan " + Version::get_version(), Log::FATAL);
@@ -31,11 +41,24 @@ int main(int argc, const char *argv[]) {
         Log::log(string("usage: ") + argv[0] + " config_file", Log::FATAL);
         exit(1);
     }
+    signal(SIGINT, handleTermination);
+    signal(SIGTERM, handleTermination);
+#ifndef _WIN32
+    signal(SIGHUP, restartService);
+#endif
     Config config;
     try {
-        config.load(argv[1]);
-        Service service(config);
-        return service.run();
+        do {
+            restart = false;
+            config.load(argv[1]);
+            service = new Service(config);
+            service->run();
+            delete service;
+            if (restart) {
+                Log::log_with_date_time("trojan service restarting. . . ", Log::FATAL);
+            }
+        } while (restart);
+        return 0;
     } catch (const exception &e) {
         Log::log_with_date_time(string("fatal: ") + e.what(), Log::FATAL);
         Log::log_with_date_time("exiting. . . ", Log::FATAL);

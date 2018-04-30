@@ -17,11 +17,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "version.h"
-using namespace std;
+#ifndef _UDPPACKET_H_
+#define _UDPPACKET_H_
 
-const string Version::version("1.1.0");
+#include "socks5address.h"
 
-string Version::get_version() {
-    return version;
-}
+class UDPPacket {
+public:
+    SOCKS5Address address;
+    uint16_t length;
+    std::string payload;
+    int parse(const std::string &data);
+    static std::string generate(const boost::asio::ip::udp::endpoint &endpoint, const std::string &payload);
+};
+
+#endif // _UDPPACKET_H_
